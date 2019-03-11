@@ -61,8 +61,7 @@ rule stats:
     input:
         fasta = list(spec_to_file.values())
     output:
-        stats = 'output/020_stats/stats.txt',
-        gc = 'output/020_stats/gc.txt'
+        stats = 'output/020_stats/stats.txt'
     params:
         fasta = lambda wildcards, input: ','.join(input.fasta)
     log:
