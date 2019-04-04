@@ -168,6 +168,7 @@ rule generate_genome:
         'STAR '
         '--runThreadN {threads} '
         '--runMode genomeGenerate '
+        '--limitGenomeGenerateRAM 500000000000 ' # 0.5 TB
         '--genomeDir {params.outdir} '
         '--genomeFastaFiles {input.fasta} '
         '--outFileNamePrefix {params.outdir}/ '
