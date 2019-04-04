@@ -85,7 +85,7 @@ rule map:
         r2 = 'data/reads/{s}_L005_R2_001.fastq.gz',
         genome = 'output/030_map/star-index_{name}/SA'
     output:
-        ('output/030_map/{s}/'
+        ('output/030_map/{s}_{name}/'
          '{s}.Log.final.out')
     params:
         genome_dir = 'output/030_map/star-index_{name}',
