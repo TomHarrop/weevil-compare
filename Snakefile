@@ -55,14 +55,22 @@ with open(fn_file, 'rt') as f:
 # RULES #
 #########
 
+rnaseq_samples = glob_wildcards(
+    'data/reads/CCU1EANXX-3897-{s1}-21-1_S{s2}_L005_R2_001.fastq.gz')
+sample_names = expand('CCU1EANXX-3897-{s1}-21-1_S{s2}',
+                      zip,
+                      s1=rnaseq_samples.s1,
+                      s2=rnaseq_samples.s2)
+
+print(sample_names)
+
 rule target:
     input:
         expand('output/010_busco/run_{name}/full_table_{name}.tsv',
                name=list(spec_to_file.keys())),
         'output/020_stats/stats.txt',
         expand('output/030_map/{s}/{s}.Log.final.out',
-               s=['CCU1EANXX-3897-01-21-1_S123',
-                  'CCU1EANXX-3897-02-21-1_S124'])
+               s=sample_names)
 
 # RNAseq read mapping
 rule map:
