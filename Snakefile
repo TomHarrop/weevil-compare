@@ -51,10 +51,6 @@ with open(fn_file, 'rt') as f:
         spec_to_commonname[row[1]] = row[3]
 
 
-#########
-# RULES #
-#########
-
 rnaseq_samples = glob_wildcards(
     'data/reads/CCU1EANXX-3897-{s1}-21-1_S{s2}_L005_R2_001.fastq.gz')
 sample_names = expand('CCU1EANXX-3897-{s1}-21-1_S{s2}',
@@ -62,32 +58,42 @@ sample_names = expand('CCU1EANXX-3897-{s1}-21-1_S{s2}',
                       s1=rnaseq_samples.s1,
                       s2=rnaseq_samples.s2)
 
-print(sample_names)
+#########
+# RULES #
+#########
 
 rule target:
     input:
         expand('output/010_busco/run_{name}/full_table_{name}.tsv',
                name=list(spec_to_file.keys())),
         'output/020_stats/stats.txt',
-        expand('output/030_map/{s}/{s}.Log.final.out',
-               s=sample_names)
+        expand('output/030_map/{s}_{name}/{s}.Log.final.out',
+               s=sample_names,
+               name=list(spec_to_file.keys()))
+
+# catalog mapping
+# rule map_stacks_catalog:
+    
+
+# rule bwa_index:
+
 
 # RNAseq read mapping
 rule map:
     input:
         r1 = 'data/reads/{s}_L005_R1_001.fastq.gz',
         r2 = 'data/reads/{s}_L005_R2_001.fastq.gz',
-        genome = 'output/030_map/star-index/SA'
+        genome = 'output/030_map/star-index_{name}/SA'
     output:
         ('output/030_map/{s}/'
          '{s}.Log.final.out')
     params:
-        genome_dir = 'output/030_map/star-index',
-        prefix = 'output/030_map/{s}/{s}.'
+        genome_dir = 'output/030_map/star-index_{name}',
+        prefix = 'output/030_map/{s}_{name}/{s}.'
     threads:
         multiprocessing.cpu_count()
     log:
-        'output/logs/030_map/{s}.log'
+        'output/logs/030_map/{s}_{name}.log'
     singularity:
         star_container
     shell:
@@ -103,16 +109,16 @@ rule map:
 
 rule generate_genome:
     input:
-        'data/assemblies/flye_denovo_full.racon.fasta'
+        unpack(assembly_catalog_resolver)
     output:
-        'output/030_map/star-index/SA',
-        'output/030_map/star-index/chrNameLength.txt'
+        'output/030_map/star-index_{name}/SA',
+        'output/030_map/star-index_{name}/chrNameLength.txt'
     params:
-        outdir = 'output/030_map/star-index'
+        outdir = 'output/030_map/star-index_{name}'
     threads:
         multiprocessing.cpu_count()
     log:
-        'output/logs/030_map/generate_genome.log'
+        'output/logs/030_map/generate_genome_{name}.log'
     singularity:
         star_container
     shell:
@@ -120,7 +126,7 @@ rule generate_genome:
         '--runThreadN {threads} '
         '--runMode genomeGenerate '
         '--genomeDir {params.outdir} '
-        '--genomeFastaFiles {input} '
+        '--genomeFastaFiles {input.fasta} '
         '--outFileNamePrefix {params.outdir}/ '
         '&> {log}'
 
