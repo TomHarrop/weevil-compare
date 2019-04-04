@@ -41,6 +41,7 @@ def resolve_path(x):
 # MAIN #
 ########
 
+
 spec_to_file = {}
 spec_to_commonname = {}
 with open(fn_file, 'rt') as f:
