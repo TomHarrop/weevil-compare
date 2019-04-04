@@ -19,6 +19,7 @@ l2r2 = 'data/reads/CCU1EANXX-3897-02-21-1_S124_L005_R2_001.fastq.gz'
 busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 bbduk_container = 'shub://TomHarrop/singularity-containers:bbmap_38.00'
 star_container = 'shub://TomHarrop/singularity-containers:star_2.7.0c'
+bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
 
 #############
 # FUNCTIONS #
@@ -69,13 +70,55 @@ rule target:
         'output/020_stats/stats.txt',
         expand('output/030_map/{s}_{name}/{s}.Log.final.out',
                s=sample_names,
+               name=list(spec_to_file.keys())),
+        expand('output/040_gbs_map/{name}.sam',
                name=list(spec_to_file.keys()))
 
-# catalog mapping
-# rule map_stacks_catalog:
-    
 
-# rule bwa_index:
+
+# catalog mapping
+rule map_stacks_catalog:
+    input:
+        fa = 'data/catalog.fa.gz',
+        index = expand('output/040_gbs_map/bwa_index_{{name}}/ref.fasta.{suffix}',
+                       suffix=['amb', 'ann', 'bwt', 'pac', 'sa'])
+    output:
+        'output/040_gbs_map/{name}.sam'
+    params:
+        prefix = 'output/040_gbs_map/bwa_index_{name}/ref.fasta',
+    threads:
+        multiprocessing.cpu_count()
+    log:
+        'output/logs/map_stacks_catalog_{name}.log'
+    singularity:
+        bwa_container
+    shell:
+        'bwa mem '
+        '-t {threads} '
+        '{params.prefix} '
+        '{input.fa} '
+        '> {output} '
+        '2> {log}'
+
+rule bwa_index:
+    input:
+        unpack(assembly_catalog_resolver)
+    output:
+        expand('output/040_gbs_map/bwa_index_{{name}}/ref.fasta.{suffix}',
+               suffix=['amb', 'ann', 'bwt', 'pac', 'sa'])
+    params:
+        prefix = 'output/040_gbs_map/bwa_index_{name}/ref.fasta'
+    threads:
+        1
+    log:
+        'output/logs/bwa_index_{name}.log'
+    singularity:
+        bwa_container
+    shell:
+        'bwa index '
+        '-p {params.prefix} '
+        '{input.fasta} '
+        '2> {log}'
 
 
 # RNAseq read mapping
