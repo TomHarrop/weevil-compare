@@ -20,6 +20,8 @@ busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 bbduk_container = 'shub://TomHarrop/singularity-containers:bbmap_38.00'
 star_container = 'shub://TomHarrop/singularity-containers:star_2.7.0c'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
+samtools_container = 'shub://TomHarrop/singularity-containers:samtools_1.9'
+r_container = 'shub://TomHarrop/singularity-containers:r_3.5.2'
 
 #############
 # FUNCTIONS #
@@ -69,15 +71,23 @@ rule target:
         expand('output/010_busco/run_{name}/full_table_{name}.tsv',
                name=list(spec_to_file.keys())),
         'output/020_stats/stats.txt',
-        expand('output/030_map/{s}_{name}/{s}.Log.final.out',
-               s=sample_names,
-               name=list(spec_to_file.keys())),
-        expand('output/040_gbs_map/{name}.sam',
+        'output/030_map/star_results.csv',
+        expand('output/040_gbs_map/{name}.flagstat',
                name=list(spec_to_file.keys()))
 
-
-
 # catalog mapping
+rule map_stacks_catalog_stats:
+    input:
+        'output/040_gbs_map/{name}.sam'
+    output:
+        'output/040_gbs_map/{name}.flagstat'
+    singularity:
+        samtools_container
+    priority:
+        10
+    shell:
+        'samtools flagstat {input} > {output}'
+
 rule map_stacks_catalog:
     input:
         fa = 'data/catalog.fa.gz',
@@ -88,7 +98,7 @@ rule map_stacks_catalog:
     params:
         prefix = 'output/040_gbs_map/bwa_index_{name}/ref.fasta',
     threads:
-        multiprocessing.cpu_count()
+        min(multiprocessing.cpu_count(), 48)
     log:
         'output/logs/map_stacks_catalog_{name}.log'
     singularity:
@@ -123,6 +133,25 @@ rule bwa_index:
 
 
 # RNAseq read mapping
+rule parse_star_results:
+    input:
+        star_files = expand('output/030_map/{s}_{name}/{s}.Log.final.out',
+                            s=sample_names,
+                            name=list(spec_to_file.keys())),
+        sample_key = 'data/full_sample_key.csv',
+        assembly_filenames = 'data/assembly_filenames.txt'
+    output:
+        'output/030_map/star_results.csv'
+    params:
+        star_dir = 'output/030_map'
+    log:
+        'output/logs/030_map/parse_star_results.log'
+    singularity:
+        r_container
+    script:
+        'src/parse_star_results.R'
+
+
 rule map:
     input:
         r1 = 'data/reads/{s}_L005_R1_001.fastq.gz',
@@ -135,7 +164,7 @@ rule map:
         genome_dir = 'output/030_map/star-index_{name}',
         prefix = 'output/030_map/{s}_{name}/{s}.'
     threads:
-        multiprocessing.cpu_count()
+        min(multiprocessing.cpu_count(), 48)
     log:
         'output/logs/030_map/{s}_{name}.log'
     singularity:
