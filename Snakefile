@@ -22,6 +22,8 @@ star_container = 'shub://TomHarrop/singularity-containers:star_2.7.0c'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
 samtools_container = 'shub://TomHarrop/singularity-containers:samtools_1.9'
 r_container = 'shub://TomHarrop/singularity-containers:r_3.5.2'
+minimap2 = 'shub://TomHarrop/singularity-containers:minimap2_2.11r797'
+
 
 #############
 # FUNCTIONS #
@@ -33,6 +35,15 @@ def assembly_catalog_resolver(wildcards):
         return({'fasta': spec_to_file[wildcards.name]})
     else:
         raise ValueError('missing {} in catalog'.format(wildcards.name))
+
+
+def genomic_read_resolver(wildcards):
+    if wildcards.mode == 'sr':
+        return('data/illumina_reads.fq.gz')
+    elif wildcards.mode == 'map-ont':
+        return('data/nanopore_reads.fq.gz')
+    else:
+        raise ValueError(f'genomic_read_resolver can\'t resolve {wildcards.mode}')
 
 
 def resolve_path(x):
@@ -73,7 +84,54 @@ rule target:
         'output/020_stats/stats.txt',
         'output/030_map/star_results.csv',
         expand('output/040_gbs_map/{name}.flagstat',
-               name=list(spec_to_file.keys()))
+               name=list(spec_to_file.keys())),
+        expand('output/050_map-genomic-reads/{mode}/{name}_sorted.bam',
+               name=list(spec_to_file.keys()),
+               mode=['map-ont', 'sr'])
+
+
+
+# genomic read mapping
+rule minimap:
+    input:
+        reads = genomic_read_resolver,
+        ref = 'output/050_map-genomic-reads/minimap2-index_{mode}/{name}/ref.mmi'
+    output:
+        'output/050_map-genomic-reads/{mode}/{name}.sam'
+    log:
+        'output/logs/050_map-genomic-reads/{mode}_{name}.log'
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        minimap2
+    shell:
+        'minimap2 '
+        '-ax {wildcards.mode} '
+        '-t {threads} '
+        '{input.ref} '
+        '{input.reads} '
+        '> {output} '
+        '2> {log}'
+
+
+rule minimap2_index:
+    input:
+        unpack(assembly_catalog_resolver)
+    output:
+        'output/050_map-genomic-reads/minimap2-index_{mode}/{name}/ref.mmi'
+    log:
+        'output/logs/050_map-genomic-reads/{mode}_{name}_index.log'
+    wildcard_constraints:
+        name = '\w+',
+        mode = '(\w|-)+'
+    singularity:
+        minimap2
+    shell:
+        'minimap2 '
+        '-x {wildcards.mode} '
+        '-d {output} '
+        '{input.fasta} '
+        '2> {log}'
 
 # catalog mapping
 rule map_stacks_catalog_stats:
@@ -259,4 +317,27 @@ rule busco:
         '--species tribolium2012 '
         '--mode genome '
         '&> {log}'
+
+
+rule samtools_sort:
+    input:
+        '{path}/{file}.sam'
+    output: 
+        bam = '{path}/{file}_sorted.bam',
+        bai = '{path}/{file}_sorted.bam.bai'
+    log:
+        'output/logs/sort/{path}_{file}.log'
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        samtools_container
+    shell:
+        'samtools sort '
+        '-o {output.bam} '
+        '-O BAM '
+        '-@ {threads} '
+        '{input} '
+        '2> {log} '
+        '; '
+        'samtools index {output.bam} 2>> {log}'
 

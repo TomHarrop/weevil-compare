@@ -4,3 +4,4 @@ GCA_001012855.1_ASM101285v1_genomic.fna,Hypothenemus_hampei,Curculionidae,Coffee
 GCA_002938485.1_Soryzae_1.0_genomic.fna,Sitophilus_oryzae,Curculionidae,Rice_weevil
 final.scaffolds.fa,Listronotus_bonariensis_sr,Curculionidae,ASW_shortread
 flye_denovo_full.racon.fasta,Listronotus_bonariensis_lr,Curculionidae,ASW_longread
+curated.fasta,Listronotus_bonariensis_withpool,Curculionidae,ASW_withpool
