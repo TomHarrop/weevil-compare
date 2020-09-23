@@ -20,7 +20,7 @@ busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 bbduk_container = 'shub://TomHarrop/singularity-containers:bbmap_38.00'
 star_container = 'shub://TomHarrop/singularity-containers:star_2.7.0c'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
-samtools_container = 'shub://TomHarrop/singularity-containers:samtools_1.9'
+samtools_container = 'shub://TomHarrop/align-utils:samtools_1.10'
 r_container = 'shub://TomHarrop/singularity-containers:r_3.5.2'
 minimap2 = 'shub://TomHarrop/singularity-containers:minimap2_2.11r797'
 
@@ -100,7 +100,7 @@ rule map_genomic_reads_stats:
     priority:
         10
     shell:
-        'samtools flagstat {input} > {output}'
+        'samtools flagstat -O tsv {input} > {output}'
 
 
 rule minimap:
@@ -155,7 +155,7 @@ rule map_stacks_catalog_stats:
     priority:
         10
     shell:
-        'samtools flagstat {input} > {output}'
+        'samtools flagstat -O tsv {input} > {output}'
 
 rule map_stacks_catalog:
     input:
