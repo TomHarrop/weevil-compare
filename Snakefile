@@ -90,7 +90,7 @@ rule target:
                mode=['map-ont', 'sr'])
 
 # genomic read mapping
-rule map_stacks_catalog_stats:
+rule map_genomic_reads_stats:
     input:
         'output/050_map-genomic-reads/{mode}/{name}_sorted.bam'
     output:
