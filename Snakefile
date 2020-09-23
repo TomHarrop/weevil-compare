@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import csv
-import pathlib2
+import pathlib as pathlib2
 import tempfile
 import multiprocessing
 
@@ -322,7 +322,7 @@ rule busco:
 rule samtools_sort:
     input:
         '{path}/{file}.sam'
-    output: 
+    output:
         bam = '{path}/{file}_sorted.bam',
         bai = '{path}/{file}_sorted.bam.bai'
     log:
