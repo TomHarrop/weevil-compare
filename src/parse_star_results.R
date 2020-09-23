@@ -36,9 +36,9 @@ star_dir <- snakemake@params[["star_dir"]]
 full_results_file <- snakemake@output[[1]]
 
 # dev
-af_file <- "data/assembly_filenames.txt"
-rnaseq_sample_key_file <- "data/full_sample_key.csv"
-star_dir <- "output/030_map"
+# af_file <- "data/assembly_filenames.txt"
+# rnaseq_sample_key_file <- "data/full_sample_key.csv"
+# star_dir <- "output/030_map"
 
 ########
 # MAIN #
