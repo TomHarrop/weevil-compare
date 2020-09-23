@@ -85,13 +85,24 @@ rule target:
         'output/030_map/star_results.csv',
         expand('output/040_gbs_map/{name}.flagstat',
                name=list(spec_to_file.keys())),
-        expand('output/050_map-genomic-reads/{mode}/{name}_sorted.bam',
+        expand('output/050_map-genomic-reads/{mode}/{name}.flagstat',
                name=list(spec_to_file.keys()),
                mode=['map-ont', 'sr'])
 
-
-
 # genomic read mapping
+rule map_stacks_catalog_stats:
+    input:
+        'output/050_map-genomic-reads/{mode}/{name}_sorted.bam'
+    output:
+        'output/050_map-genomic-reads/{mode}/{name}.flagstat'
+    singularity:
+        samtools_container
+    priority:
+        10
+    shell:
+        'samtools flagstat {input} > {output}'
+
+
 rule minimap:
     input:
         reads = genomic_read_resolver,
